@@ -1,0 +1,553 @@
+\documentclass[11pt]{book}
+
+% Preamble
+\usepackage{graphicx} % For including images
+\usepackage{amsmath} % For mathematical formulas
+\usepackage{hyperref} % For hyperlinks
+\usepackage{geometry} % For page layout and margins
+\usepackage{listings} % For code listings
+\usepackage{xcolor}   % For colored text and backgrounds
+\usepackage{indentfirst}   % For colored text and backgrounds
+
+% Define code listing styles
+\lstset{
+    basicstyle=\ttfamily,
+    keywordstyle=\color{blue},
+    stringstyle=\color{red},
+    commentstyle=\color{green},
+    morecomment=[l][\color{magenta}]{\#}
+}
+
+% Document settings
+\geometry{
+    a4paper,
+    total={170mm,257mm},
+    left=20mm,
+    top=20mm,
+}
+
+\title{\textbf{3D Visual Reconstruction: A Practical Approach}}
+\author{Vahagn Yeghikyan}
+\date{2023}
+
+% Begin Document
+\begin{document}
+
+\frontmatter
+\maketitle
+\tableofcontents
+
+\mainmatter
+
+\part{Introduction to Image Processing}
+
+\chapter{Understanding Digital Images}
+
+
+\section{Introduction to Digital Imaging}
+
+A digital image is a representation of a visual image (like a photograph or scene) in the form of a two-dimensional array composed of pixels. Each pixel, or picture element, in this array contains information about the brightness and color at a specific point in the image. Typically, each pixel represents 1 (grayscale), 3 (rgb) or 4 (rgba) values. 
+
+%\subsection{What is a Digital Image?}
+%A digital image is typically created by converting optical information (light) into electrical signals using a sensor, as found in digital cameras. This conversion process is known as digitization.
+
+In digital imaging, a standard coordinate system is used. The origin (0,0) is located at the top-left corner of the image. The x-coordinate increases horizontally to the right, and the y-coordinate increases vertically downwards. This coordinate system is essential for accessing and manipulating pixels within an image.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.6\textwidth]{images/pixels.drawio.png}
+\caption{A simple 2D representation of a digital image showing its coordinate system.}
+\end{figure}
+
+
+Throughout this book, we will consider pixel components values encoded in 8 bits, hence, ranging from 0 (no color) to 255 (max color). There are sensors that produce higher color resolution that  are encoded into 12 and even 20 bits (expensive production photo-cameras), however, although crucial for certain applications, such a high color resolution is of no use for our purposes.   
+
+
+\section{Understanding Image Formats and Compression}
+
+Since, throughout the book we will have practical examples that use actual images, we should understand, that storing the image data as is on the hard drive is inefficient. In the world of digital imaging, different formats are used to store images, each with its unique characteristics. Some of the most common formats include BMP, JPEG, and PNG. Understanding these formats is crucial for image processing, as the choice of format can affect the quality and size of the image.
+
+Below are 3 most common image formats that are widely used and supported.
+
+\begin{itemize}
+	\item {\bf BMP (Bitmap Image File)} The BMP format, also known as bitmap, is a simple, uncompressed format native to the Windows environment. It stores color data for each pixel in the image without any compression. As a result, BMP files are typically large but maintain high image quality.
+	\item {\bf JPEG (Joint Photographic Experts Group)} JPEG is a widely used format for photographic images. It employs lossy compression, which reduces file size by selectively discarding less important data. While this compression can significantly reduce file sizes, it can also lead to a loss of image quality, especially at higher compression levels.
+	\item {\bf PNG (Portable Network Graphics)} PNG is a format designed for the web, offering lossless compression. It provides a good balance between image quality and file size and supports transparency, making it suitable for graphics and web images.
+\end{itemize}
+
+
+While understanding image formats and compression is vital, the implementation details of these compression algorithms are beyond the scope of this book. Our focus will primarily be on the processing and manipulation of images, regardless of their format. However, knowledge of these formats is essential when choosing the right format for storage and processing tasks in image processing and 3D reconstruction applications.
+
+
+\section{Practical Application: The Image Class}
+
+
+Moving from the theoretical understanding of digital images, let's dive into a practical implementation. This will enable us to understand the digital images better by playing with the actual data. In our accompanying library, we have an `Image` class, defined in `image.h`, which encapsulates the properties and functionalities of a digital image in C++. 
+
+The `Image` class serves as a fundamental building block in our library. It holds the image data and provides methods to access and manipulate pixels. The class is designed to be flexible and efficient, suitable for a range of image processing tasks.
+
+Here is the code listing for the `Image` class:
+
+\begin{lstlisting}[language=C++, caption={Image class implementation}]
+#ifndef VISQ_IMAGE_H
+#define VISQ_IMAGE_H
+
+#include <memory> // for shared_ptr
+
+namespace visq {
+
+template<typename T>
+class Image {
+ public:
+  Image(size_t width, size_t height, size_t channels)
+    : width_(width), height_(height), channels_(channels),
+      stride_(width * channels), offset_(0),
+      data_(new uint8_t[width * height * channels]) {}
+
+  Image(const Image<T>& other, size_t new_width, size_t new_height, size_t offset)
+    : width_(new_width), height_(new_height), channels_(other.channels_),
+      stride_(other.stride_), offset_(offset),
+      data_(other.data_) {}
+
+  void Set(T value, size_t y, size_t x, size_t c) {
+    data_.get()[(y * stride_) + (x * channels_) + c + offset_] = value;
+  }
+
+  [[nodiscard]] const T& At(size_t y, size_t x, size_t c) const  {
+    return data_.get()[(y * stride_) + (x * channels_) + c + offset_];
+  }
+
+  T* Data() {
+    return data_.get();
+  }
+
+  [[nodiscard]] const T* Data() const {
+    return data_.get();
+  }
+
+  template<typename R>
+  bool CopyTo(Image<R> &other) const;
+
+  [[nodiscard]] bool IsContinuous() const {
+    return stride_ == width_ * channels_;
+  }
+
+  // Getters
+  [[nodiscard]] size_t GetWidth() const { return width_; }
+  [[nodiscard]] size_t GetHeight() const { return height_; }
+  [[nodiscard]] size_t GetChannels() const { return channels_; }
+  [[nodiscard]] size_t GetStride() const { return stride_; }
+  [[nodiscard]] size_t GetOffset() const { return offset_; }
+
+ private:
+  size_t width_;
+  size_t height_;
+  size_t channels_;
+  size_t stride_;
+  size_t offset_;
+  std::shared_ptr<T[]> data_;
+};
+
+}  // namespace visq
+
+#endif  // VISQ_IMAGE_H
+\end{lstlisting}
+
+Let us quickly review the basic properties of the class.
+
+\begin{itemize}
+	\item {\bf width\_} The width of the image in pixels.
+	\item {\bf height\_} The height of the image in pixels.
+	\item {\bf channels\_} The number of channels (typically 1, 3, or 4).
+	\item {\bf data\_} A shared pointer to the pixel data itself. We will keep the pixel data in the most common - interleaved format, i.e. the first $channels\_$ bytes will represent the top left pixel components, the next $channels\_$ bytes the pixel to the right and so on until we reach the end of the top row. Then comes the second row with the exact same format.   
+\end{itemize} 
+
+We will speak about the $stride\_$ and $offset\_$ variables a bit later. For now, we will think about the simplest case where $offset\_ = 0$ and $stride\_ = width\_ * channels\_$.   
+
+- \textbf{Pixel Access}: The `At` method provides direct access to the pixel values, enabling both read and write operations. An implementation of such a method can look as follows:
+
+ \begin{lstlisting}[language=C++, caption={An implementation of the method At}]
+ uint8_t & Image::At(size_t y, size_t x, size_t channel) {
+   return data_[y_ * width_ * channels_ + x_* channels_ + channel];
+ }	
+ \end{lstlisting}
+
+Here and there we would want, however, to access not the entire image, but a small part of it represented by a rectangle with its top-left corner located at some point $(left\_x, top\_y)$ and which has some $width$ and $height$. This is why we need the second constructor. For multiple purposes, we do not want to copy the pixel data, so we will just take the pointer to it. This, however, leads to the problem that the current implementation of the method $At$ will not work for such sub-images. Indeed $y* width\_ * channels\_$ no more represents the offset of the row. We need to now the width of the initial image and that is what we will keep in our stride variable. We will also need the $offset\_$ variable that represents the offset of the top-left pixel of the sub-image in the data array. Hence, the modified method will read:
+
+ \begin{lstlisting}[language=C++, caption={An implementation of the method At}]
+ uint8_t & Image::At(size_t y, size_t x, size_t channel) {
+   return data_[offset_ + y_ * stride_ + x_* channels_ + channel];
+ }	
+ \end{lstlisting}
+
+
+This class forms the foundation for more advanced image processing and 3D reconstruction techniques that will be explored later in the book.
+
+
+As soon as we have our `Image` class we would want to load an actual image and explore its contents. However, as already mentioned, images are stored and distributed in special formats. For the implementation of image loading and saving, we utilize the `stb` library, a popular set of single-file public domain libraries for C/C++. The `stb` library provides simple and efficient solutions for handling common operations in image processing, such as reading and writing different image file formats.
+
+\textit{Note:} The `stb` library is external to our library and must be included separately. It offers functions like `stbi\_load` and `stbi\_write\_xxx` for dealing with various image formats.
+
+
+The `io.h` file in our library interfaces with the `stb` library functions and provides a simplified and unified API for our image processing tasks. It abstracts the complexities involved in directly using the `stb` library functions, thereby making image I/O operations more accessible and straightforward for users.
+
+
+Now, we are ready to implement our first application. The following program will load an image and print the values of the provided channel:
+
+\begin{lstlisting}[language=C++, caption={A simple application that prints some pixel values}]
+#include <iostream>
+#include "image.h"
+#include "io.h"
+
+int main(int argc, char *argv[]){
+
+  char * imname = argv[1];
+  size_t channel, print_square_size;
+  char * error;
+  channel = strtol(argv[2], &error);
+  
+  if(error){
+    std::cout << error << std::endl;
+    return 1;
+  }
+  
+  print_square_size = strtol(argv[3], &error);
+  if(error){
+    std::cout << error << std::endl;
+    return 1;
+  }
+  
+  auto [error_code, Image] = LoadImage(im_path);
+  if(error_code != OK)
+    return 1;
+  
+  // some checks here.
+  
+  for(size_t y = 0; y < print_square_size; ++y){
+    for( size_t x = 0; x < print_square_size; ++x){
+      std::cout << image.At(y,x,channel) << '\t';
+    }
+    std::cout << std::endl;
+  }
+  
+  return 0
+}	
+ \end{lstlisting}
+
+\newpage
+\section{Images as Signals}
+
+Signal processing is a field that deals with the analysis, modification, and synthesis of signals. A signal, in a broad sense, is a function conveying information about the behavior or attributes of some phenomenon. In most cases signals are continuous smooth functions of time. Take, for example, the sound wave emitted by a source(say, speaker) or the distance of the car from its initial point through a trip.  
+
+In the digital world, however, we cannot possibly keep the whole signal because it will potentially require memorizing an infinite  (continuum or even countable) set of pairs (t, f). Typically, in the digital world we take discrete values and store them with a certain precision (8-64bit float/integer). This process is called "sampling". Figure \ref{fig:signal} shows an example of a real world signal (the solid graph line) and the sampled digital values (black circles). 
+
+It is clear, that during the sampling process we lose a huge amount of information. ( In fact, in some hard-core mathematical we lose almost all the information).  Should we try to recover the original signal, we will figure out that it can be done in infinitely many ways. Indeed, there are infinitely many ways to connect 2 dots with continuous functions. 
+
+In the context of digital systems, signals are typically represented in discrete form. 
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.6\textwidth]{images/digitalization.drawio.png}
+\caption{Example of signal with its discretization}
+\label{fig:signal}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.6\textwidth]{images/restore-combined.png}
+\caption{Example of signal with its discretization}
+\label{fig:signal}
+\end{figure}
+
+ 
+As you see, although the figure composed of the black circles resembles the original signal, the details between the dots are omitted and lost. Restoring the values at any real time-point $t$ can be done in infinitely many ways, and, strictly speaking is not a well-defined problem.
+
+In many applications, however, this does not matter much. The most common example of this is the sound. A typical human ear can hear sounds with frequencies in range 20Hz-20kHz. So,  
+
+
+Signal processing techniques are fundamental in various scientific and engineering domains, including communications, audio processing, and image analysis.
+
+Traditionally, signals are thought of as 1D functions, such as audio signals, which vary over time. However, images can be conceptualized as 2D signals. In this perspective, an image is a function that varies over two spatial dimensions, representing the intensity or color of light at each point.
+
+This conceptualization allows us to apply signal processing techniques to image analysis. For instance, filtering, which is widely used in audio processing, can be applied to images for enhancement, noise reduction, or feature extraction. In this prospect we can think about the image as a 2D function $Im(y,x)$. Here and further in this section we will neglect the channels and consider only monochromatic images. 
+
+\subsection{Resampling of Digital Signals}
+
+One of the most common signal processing techniques is the so-called resampling. It involves changing the sampling rate or dimensionality of a signal. 
+
+Consider a 1D signal, such as an audio waveform. Resampling might involve increasing the sampling rate (interpolation) to make the signal smoother or decreasing it (decimation) to reduce the size of the data. In both cases, we should assume that the discrete data we have, is some digitalization of a continuous signal and we should "guess" the values of the original signal in between the value with integer coordinates. We will see many examples of resampling below. A first and the most obvious example is image resize.
+
+
+
+\subsection{Image resize}
+
+Suppose, we want to transform an image of size $M\times N$ to the new size $M'\times N'$. The point with integer coordinates $(x',y')$ on the resized image naturally corresponds to the point 
+\begin{equation}
+	x = \frac{M}{M'} x',\quad y=\frac{N}{N'}y'
+\end{equation} 
+of the original image. Notice, that $x$ and $y$ are not necessarily integers. We know the values of the pixels in the original image only at integer coordinates. In order to guess the value at point with arbitrary real coordinates, we should interpolate the value of the continuous function $Im(x,y)$ based on the integer sampling.
+ 
+The image Fig \ref{fig:resize} image illustrates resizing a $6\times 6$ image to $5\times 5$ pixels. The point with coordinates (1,1) corresponds to the point (1.2,1.2) in the original image. 
+
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.6\textwidth]{images/resampling.drawio.png}
+\caption{A simple 2D representation of a digital image showing its coordinate systvem.}
+\label{fig:resize}
+\end{figure}
+
+There are various techniques for interpolating the value of the original image at non-integer points. Below we will describe some of them separately. The follwoing is an abstract interface that represents an interpolated image:
+
+
+\begin{lstlisting}[language=C++, caption={The interface for image sampler}]
+namespace visq {
+
+/*!
+ * Interface that represents an image sampler.
+ */
+template<typename T>
+class Sampler {
+public:
+  Sampler(const Image<T> & image): image_(image) {};
+  virtual ~Sampler() = default;
+
+  /*!
+   * Returns the interpolated value of provided image volume at real point (x,y, channel)
+   */
+  [[nodiscard]] virtual T Interpolate(double y, 
+                                      double x,
+                                      size_t channel) const = 0;
+
+protected:
+  const Image<T> image_;
+};
+
+}
+\end{lstlisting}
+
+
+Having defined this interface we can easily implement a generic resize logic as follows:
+
+\begin{lstlisting}[language=C++, caption={The implementation of resizer using sampler}]
+#include <visq/image.h>
+#include <visq/transform/sampler.h>
+
+namespace visq {
+/*!
+ * @brief Resizes image from Sampler
+ */
+template<typename T>
+class Resizer {
+public:
+  /*!
+   * @brief Resizes the image into the provided one.
+   * @param sampler The sampler of original image.
+   * @param image_to The target image to resize image to.
+   */
+  static void Resize(const Sampler<T> * const sampler, Image<T> * image_to) {
+    double scale_x = static_cast<double>(sampler->GetImage().GetWidth()) /  image_to->GetWidth();
+    double scale_y = static_cast<double>(sampler->GetImage().GetHeight()) /  image_to->GetHeight();
+    for(size_t y = 0; y < image_to->GetHeight(); ++y) {
+      double y_o = scale_y * y;
+      for(size_t x = 0; x < image_to->GetWidth(); ++x) {
+      double x_o = scale_x * x;
+        for(size_t c = 0; c < image_to->GetChannels(); ++c) {
+          image_to->Set(sampler->Interpolate(y_o, x_o, c), y,x,c);
+        }
+      }
+    }
+  }
+};
+} // namespace visq
+\end{lstlisting}
+
+\subsubsection{Nearest-neighbor interpolation}
+
+This is the simplest and roughest interpolation. It simply returns the value of the pixel that is nearest to the point of interest. 
+
+The following is a self-explanatory implementation:
+
+\begin{lstlisting}[language=C++, caption={An implementation of the Nearest Neighbor interpolation}]
+#include <visq/transform/sampler.h>
+
+namespace visq {
+
+template<typename T>
+class NearestNeighborInterpolation: public Sampler<T> {
+public:
+  NearestNeighborInterpolation(const Image<T> & image): Sampler<T>(image) {}
+
+  [[nodiscard]] uint8_t Interpolate(double y, double x, size_t channel) const override {
+    y = std::max(0., y);
+    y = std::min(static_cast<double>(this->image_.GetHeight()), y);
+
+    x = std::max(0., x);
+    x = std::min(static_cast<double>(this->image_.GetWidth()), x);
+
+    size_t y_int = std::round(y);
+    size_t x_int = std::round(x);
+
+    return this->image_.At(y_int, x_int, channel);
+  }
+};
+
+}
+\end{lstlisting}
+
+\subsubsection{Bi-linear interpolation} 
+
+The idea behind this kind of interpolation is as old as the calculus itself. Assuming we have sampled a data from a 1-dimensional signal and got some number $N$ of data-points ($x_n, y_n)$. As the most simplistic interpolation we can simply connect the data points on the graph with lines thus filling the gaps between them.
+
+ Namely,  we interpolate the original data with a set of linear functions as follows:
+
+\begin{equation}
+y(x) = \left\{y_k + \frac{y_{k+1} - y_{k}}{x_{k+1} - x_k} (x - x_k), \quad x_k \leq x \leq x_{k+1}\right.
+\end{equation}
+
+ Fig.\ref{fig:linear_interpolation} illustrates this.
+ 
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.6\textwidth]{images/lin.drawio.png}
+\caption{Linear interpolation}
+\label{fig:linear_interpolation}
+\end{figure}
+
+The bilinear interpolation is done in 2 steps, see Fig \ref{fig:bilinear_interpolation}. First The values of the points $E$ and $F$ are interpolated from the points $A,B$ and $C,D$ respectively. Then the value of the point is interpolated from the point $E$ and $F$. 
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.6\textwidth]{images/bilin.drawio.png}
+\caption{Bilinear interpolation}
+\label{fig:bilinear_interpolation}
+\end{figure}
+
+It is an exercise to check that the result of interpolation does not depend on the order of interpolation, i.e. we could have performed the same steps by interpolating points on the vertical axis from point $A,C$ and $B,D$ respectively and then perform the second interpolation between those points. 
+
+
+\subsubsection{Bi-Cubic Interpolation}
+Cubic interpolation uses the values of neighboring points to compute a cubic polynomial for each interval between known points. In images, bicubic interpolation, which applies cubic interpolation in both dimensions, provides smoother results than linear interpolation but at a higher computational cost.
+...
+
+\subsubsection{Higher-Order Interpolation}
+More sophisticated interpolation methods, such as spline interpolation or Lanczos resampling, use higher-order polynomials or specially designed kernels. These methods can provide superior results, especially for high-resolution images, but are computationally more intensive.
+
+
+
+\subsubsection{Choosing the Right Interpolation Method}
+The choice of interpolation method depends on various factors, including:
+\begin{itemize}
+    \item The nature of the data or image being processed.
+    \item The desired balance between image quality and computational efficiency.
+    \item The specific requirements of the application, such as real-time processing constraints or the need for high-quality visual results.
+\end{itemize}
+
+Each method has its advantages and trade-offs. Nearest-neighbor interpolation, while less computationally demanding, may not be suitable for high-quality image scaling. On the other hand, methods like bicubic interpolation or Lanczos resampling, while offering higher quality, might be overkill for simple applications or when computational resources are limited.
+
+In the following sections, we will explore these interpolation methods in more detail, particularly in the context of image processing tasks such as resizing and geometric transformations.
+
+% Add more chapters and parts as needed	
+
+\section{Filters}
+
+Another type of transformation employed by Signal Processing is the so-called filtering. Filters are special special type of operations which are performed on a signal in order to transform it to a more suitable form.
+The idea behind the filter is that we replace the value of the signal at certain point with a weighted sum of the surrounding values. The weights are defined by the kernel of the filter, i.e. for a continuous 1-Dimensional signal  $f(t)$ , the kernel is a function of 2 variables $k(t,\tau)$ so that the filtered signal looks:
+
+\begin{equation}
+\tilde{f}(t) = \int\limits_{-\infty}^\infty k(t,\tau) f(\tau) d\tau\label{filter_continous}
+\end{equation}  
+
+for discrete signals $f_n$ the integral is replaced with sum:
+
+\begin{equation}
+\tilde{f_n} = \sum\limits_{l=\-infty}^{\infty} k_{nl}f_l\label{filter_discrete}
+\end{equation}
+
+In digital processing filters are used for smoothing,  strengthening certain properties of the signal etc. In electrical engineering the filters can be represented by real circuits.
+
+The generalization for 2-dimensional case is straightforward; the kernel becomes 4-dimensional and the \eqref{filter_continous} and \eqref{filter_discrete} turn into
+
+\begin{equation}
+\tilde{f}(x,y) = \int\limits_{-\infty}^\infty dx' \int\limits_{-\infty}^\infty dy' k(x,x',y,y') f(x',y')
+\end{equation}
+
+and
+
+\begin{equation}
+\tilde{f}_{nm} = \sum\limits_{n'=\-infty}^{\infty} \sum\limits_{m'=\-infty}^{\infty} k_{nn'mm'}f_{n'm'}
+\end{equation}
+
+ We will explore filters in images processing later in this section, but before that let us consider an example of 1-dimensional continuous signal and the Gaussian low-pass filter. 
+
+\subsection{Example: Gaussian low-pass filter}
+
+Let us have a continuous signal (e.g. sound/radio-wave) that is represented by a finite smooth function $f(t)$. The function can be represented as a sum(or integral) of harmonic waves. We will consider the infinite case, i.e.
+
+\begin{equation}
+f(t) = \frac{1}{\sqrt{2\pi}}\int\limits_{-\infty}^\infty f_{\omega} e^{\imath\omega t} d\omega,\quad \text{where} \qquad f_{\omega} =\frac{1}{\sqrt{2\pi}} \int\limits_{-\infty}^\infty f(t) e^{-\imath\omega t} dt
+\end{equation}      
+The complex valued function $f_{\omega}$ corresponds to the amplitude of each harmonic wave and is called Fourier image of the function $f(t)$.
+Now let us consider the action of kernel 
+\begin{equation}
+k(t,\tau) = e^{-\frac{(t-\tau)^2}{\sigma^2}}
+\end{equation}
+ on the function $f(t)$, namely, let us investigate the Fourier image (frequency response) of the function
+\begin{equation}
+g(t) = \int\limits_{-\infty}^\infty f(\tau)e^{-\lambda(t-\tau)^2} d\tau 
+\end{equation}.
+
+Straightforward substitution lead to the following result:
+
+\begin{equation}
+g_\omega = \frac{1}{\sqrt{2\pi}} \int\limits_{-\infty}^\infty g(t) e^{-\imath\omega t} = \frac{1}{\sqrt{2\pi}} \int\limits_{-\infty}^\infty \int\limits_{-\infty}^\infty f(\tau)e^{-\frac{(t-\tau)^2}{\sigma^2}} e^{-\imath\omega t }dt d\tau 
+\end{equation}
+
+Using substitution $t' = t - \tau$, then changing the order of integrals gives
+
+\begin{equation}
+g_\omega = \int\limits_{-\infty}^\infty f(\tau) e^{-\imath\omega \tau}d\tau \int\limits_{-\infty}^\infty e^{-\frac {t^2}{\sigma^2}} e^{-\imath\omega t }dt
+\end{equation}
+
+The left integral in this equation is just the Fourier image of the initial function $f_\omega$, while the second integral gives us
+\begin{equation}
+\int\limits_{-\infty}^\infty e^{-\frac {t^2}{\sigma^2}} e^{-\imath\omega t }dt = \sqrt{\pi} \sigma e^{-\frac{\omega^2 \sigma^2}{4}}
+\end{equation}
+
+Finally, we obtain
+
+\begin{equation}
+g_\omega = \sqrt{\pi} \sigma e^{-\frac{\omega^2 \sigma^2}{4}} f_\omega
+\end{equation}
+
+This formula implies that the amplitude density is almost unchanged for small values of frequencies, while reduced significantly along the increasing them. Hence the name - low-pass filter, i.e. as soon as the signal was passed through this filter, only low frequencies survive. 
+
+Such filters are used for smoothing the signals - removing the high frequency noise.
+
+\subsection{Convolutional filters}
+
+In computational disciplines such as Image Processing we cannot perform infinite sums or take infinite integrals. However, let us observe that in the example of Gaussian filter, the value of the kernel decreases drastically along the increasing the distance from the point - $(t-\tau)$. This implies that for the given point $t$ the contribution of signal values to the value of the filtered function $\tilde{f}(t)$ decreases the farther away the points. So, with any precision $\varepsilon$ we can limit the integral (or sum) to a symmetric interval such that the contribution of everything out of that interval will be less than it and can be neglected. In other words, we replace the \eqref{filter_continous}  with finite integral:
+
+\begin{equation}
+\tilde{f}(t) = \int\limits_{\tau = t -l}^{t+l}f(\tau) k(t,\tau) d\tau\label{sliding_integral}
+\end{equation}
+
+or, for the discrete case
+
+\begin{equation}
+\tilde{f_n} = \sum\limits_{k= n-l}^{n+l} k_{nk}f_k\label{silding_sum}
+\end{equation}
+
+This resembles a sliding window with width $2l$ that slides over the initial function and replaces the value in its center with the value  of \eqref{sliding_integral} or \eqref{silding_sum}.
+
+
+
+
+
+%\chapter{3D mathematics}
+
+
+
+\backmatter
+% References, Index, etc.
+
+\end{document}

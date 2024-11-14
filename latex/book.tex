@@ -2,7 +2,7 @@
 
 % Preamble
 \usepackage{graphicx} % For including images
-\usepackage{amsmath} % For mathematical formulas
+\usepackage{amsmath,amsfonts} % For mathematical formulas
 \usepackage{hyperref} % For hyperlinks
 \usepackage{geometry} % For page layout and margins
 \usepackage{listings} % For code listings
@@ -450,7 +450,134 @@ In the following sections, we will explore these interpolation methods in more d
 
 \section{Fourier transform}
 
-It is impossible to underestimate the importance of Fourier transform in signal processing. Here we assume that the reader is introduced to the theory from a basic course of calculus and hence, to keep the con 
+It is impossible to underestimate the importance of Fourier transform in signal processing. Here we assume that the reader is familiar with the theory from a basic course of calculus and hence, to keep the context we are going just to copy the definitions here and highlight properties that are important for our purposes.
+
+\subsection{Finite case}
+
+Let us have a function $f(t)$ defined on an interval $ 0 \leq t \leq T$. Then, given the function satisfy certain conditions (which are presumed) it can be represented as an infinite sum of harmonic functions:
+
+\begin{equation}
+f(t) = \sum\limits_{n=0}^\infty \left(A_n \cos{\omega_n t} + B_n \sin{\omega_n t}\right), \text{ where } \omega_n = \frac{2 \pi n}{T}\label{fourier_finite}
+\end{equation}
+
+The coefficients $A_n$ and $B_n$ can be computed from the initial function as follows:
+
+\begin{equation}
+A_n = \frac{2}{T}\int\limits_{t=0}^T f(t) \cos{\omega_n t} dt,\quad B_n = \frac{2}{T}\int\limits_{t=0}^T f(t) \sin{\omega_n t} dt\label{fourier_finite_coefficients}
+\end{equation}
+
+Given these integrals exist, the proof follows from the simple properties of harmonic functions
+
+\begin{equation}
+\int\limits_{t=0}^T \cos{\omega_n}y \cos{\omega_kt} dt = \int\limits_{t=0}^T \sin{\omega_n}y \sin{\omega_kt} dt = \frac{T}{2}\delta_{nk},\quad \int\limits_{t=0}^T \cos{\omega_n}y \sin{\omega_kt} dt = 0
+\end{equation}
+
+The formula \eqref{fourier_finite} can be interpreted as any finite smooth function $f(t)$ can be represented as a superposition of monochromatic waves with certain amplitude and phase. This fact as we will see later is of crucial importance in the study of the properties of a signal. Indeed, since both expressions \eqref{fourier_finite} and \eqref{fourier_finite_coefficients} are linear by $f(t)$ allows us in many cases to investigate the changes of well known harmonic functions and then assemble back to the to the otherwise complex function $f$.
+
+The formula \eqref{fourier_finite} can be written in complex form:
+
+\begin{equation}
+f(t) = \sum\limits_{n=0}^\infty C_n e^{\imath \omega_n t},\label{fourier_finite_complex}
+\end{equation}
+
+where complex coefficients $C_n$ play the role of complex amplitudes:
+
+\begin{equation}
+C_n = \frac{1}{T} \int\limits_{0}^T f(t) e^{-\imath \omega_n t}dt
+\end{equation}
+
+\subsection{Discrete case}
+
+
+In the digital world the signals cannot be stored continuously. In other words, of all continuum set of pairs $(t, f)$ we reduce to a finite set of pairs $(t_n, f_n)$. The price is that we lose a lot of information about the initial signal. We would like to be able to extend formulae  \eqref{fourier_finite} and \eqref{fourier_finite_coefficients} for this case. Before we obtain a correct modification, let us observe some peculiar effect that comes from sampling.
+
+\subsubsection{Aliasing}
+
+Let us consider a harmonic signal on interval $[0,T]$ sampled with $N$ values separated with $N-1$ intervals with length $T/N$ each. Among all possible frequencies we are interested in one of those from \eqref{fourier_finite}. In the most general case the signal has the following form:
+
+\begin{equation}
+f(t) = A \sin\left({\frac{2 \pi n}{T} t + \varphi}\right).
+\end{equation}
+
+Of all points on the interval we are particularly interested in the values of the function in the sampled points 
+$$
+t_k = T\frac{k}{N},\quad k = 0,1\ldots, N
+$$\begin{equation}
+f_k = \sin\left({\frac{2 \pi k n}{N}} + \varphi\right)
+\end{equation}
+
+Let us observe, that if we restrict ourselves by only the values if the function in the sampled point, then all signals with $ k = n \mod N$ are indistinguishable, i.e. 2 function with the same amplitude and phase and frequencies which differ by $ 2 \pi m / T$, $\forall m \in \mathbb{N}$, give exactly the same values on the sampled points. 
+
+This leads us to a conclusion, that for digital signals the infinite sum in \eqref{fourier_finite} or \eqref{fourier_finite_complex} can be replaced with a finite one from $n=0$ to $n=N-1$, with the maximal frequency being the one with $n=N-1$. This means, that all Fourier components of a signal with frequency higher than $\omega_{N-1}$ will contribute to the coefficients of the components with $ k  = n \mod N$. This effect is called {\it aliasing}. We will talk about it in more details later.
+
+
+\subsubsection{Discrete Fourier transform}
+
+After replacing the sum in \eqref{fourier_finite_complex} with a little effort we arrive to the Fourier transform formulae for sampled signal $f_k$:
+
+\begin{equation}
+f_k \equiv f\left(\frac{Tk}{N}\right) = \sum\limits_{n = 0}^{N-1} f_n e^{\imath \frac{2 \pi k n}{N} }\label{fourier_discrete}
+\end{equation}
+
+and 
+
+\begin{equation}
+C_n = \frac{1}{N} \sum\limits_{k = 0}^{N-1} f_k e^{-\imath \frac{2 \pi k n}{N} }\label{fourier_discrete_coefficients}
+\end{equation}
+
+One can simply substitute \eqref{fourier_discrete_coefficients} into \eqref{fourier_discrete} and prove that this transformation holds exactly.
+
+{\bf Hint} It is necessary to notice that
+\begin{equation}
+\sum\limits_{n=0}^{N-1} e^{\frac{\imath 2 \pi k n}{N}} = 0, \quad k \in \mathbb{N}, -N < k < N
+\end{equation}
+
+This is a very important result which is widely used in signal analysis. 
+
+\subsubsection{Fast Fourier transform}
+
+The formulae \eqref{fourier_discrete} and \eqref{fourier_discrete_coefficients} give us the direct way to calculate direct and inverse Fourier transformation. It is easy to see that a straightforward implementation, however, will have $O(N^2)$ complexity ( $N$ coefficients $N$ terms in sum each). For practical applications this is very slow. Good news, however, is that it is possible to do better. There are many algorithms that can calculate the Fourier transform in $O(N\operatorname{log}{N}$. The most famous of them is the so-called Cooley-Tukey algorithm. It is based on the following observation:
+
+
+\begin{equation}
+f_k = \sum\limits_{n=0}^{N-1} f_{m} e^{\imath \frac{2 \pi k n}{N}} = \sum\limits_{m=0}^{N/2 -1} f_{2m} e^{\imath \frac{2 \pi k 2 m}{N}} + \sum\limits_{m = 0}^{N / 2-1} f_{2m+1} e^{\imath \frac{2 \pi k (2 m + 1)}{N}}
+\end{equation}
+
+Factoring out $a$ from the second term we get
+
+\begin{equation}
+f_k =  \sum\limits_{m=0}^{N/2 -1} f_{2m} e^{\imath \frac{2 \pi k 2 m}{N}} + e^{\imath \frac{2 \pi k}{N}}\sum\limits_{m = 0}^{N / 2 - 1} f_{2m+1} e^{\imath \frac{2 \pi k 2 m }{N}}
+\end{equation}
+
+
+
+
+
+
+
+
+
+
+
+Consider the following coefficients 
+\begin{equation}
+C_n = \sum\limits_{n=0}^{N} f_n e^{-\imath \omega _n t_n}, \quad t_0 = 0, t_N = T
+\end{equation}
+
+
+
+
+The statement is that a  smooth finite function $f(t)$ (that also satisfy certain conditions which are presumed) can be represented in the form of integral as follows 
+
+\begin{equation}
+f(t) = \frac{1}{\sqrt{2\pi}}\int\limits_{-\infty}^\infty f_{\omega} e^{\imath\omega t} d\omega, 
+\end{equation}  
+
+where a complex-valued function $f_\omega$ can be computed from the initial function as follows 
+
+\begin{equation}
+f_{\omega} =\frac{1}{\sqrt{2\pi}} \int\limits_{-\infty}^\infty f(t) e^{-\imath\omega t} dt
+\end{equation}
 
 \section{Filters}
 

@@ -448,6 +448,8 @@ In the following sections, we will explore these interpolation methods in more d
 
 % Add more chapters and parts as needed	
 
+
+
 \section{Fourier transform}
 
 It is impossible to underestimate the importance of Fourier transform in signal processing. Here we assume that the reader is familiar with the theory from a basic course of calculus and hence, to keep the context we are going just to copy the definitions here and highlight properties that are important for our purposes.
@@ -489,7 +491,7 @@ C_n = \frac{1}{T} \int\limits_{0}^T f(t) e^{-\imath \omega_n t}dt
 \subsection{Discrete case}
 
 
-In the digital world the signals cannot be stored continuously. In other words, of all continuum set of pairs $(t, f)$ we reduce to a finite set of pairs $(t_n, f_n)$. The price is that we lose a lot of information about the initial signal. We would like to be able to extend formulae  \eqref{fourier_finite} and \eqref{fourier_finite_coefficients} for this case. Before we obtain a correct modification, let us observe some peculiar effect that comes from sampling.
+In the digital world the signalsca nnot be stored continuously. In other words, of all continuum set of pairs $(t, f)$ we reduce to a finite set of pairs $(t_n, f_n)$. The price is that we lose a lot of information about the initial signal. We would like to be able to extend formulae  \eqref{fourier_finite} and \eqref{fourier_finite_coefficients} for this case. Before we obtain a correct modification, let us observe some peculiar effect that comes from sampling.
 
 \subsubsection{Aliasing}
 
@@ -556,36 +558,26 @@ f_k =  \sum\limits_{m=0}^{N/2 -1} f_{2m} e^{\imath \frac{2 \pi k 2 m}{N}} + e^{\
 
 
 
-
-
-
-Consider the following coefficients 
-\begin{equation}
-C_n = \sum\limits_{n=0}^{N} f_n e^{-\imath \omega _n t_n}, \quad t_0 = 0, t_N = T
-\end{equation}
-
-
-
-
-The statement is that a  smooth finite function $f(t)$ (that also satisfy certain conditions which are presumed) can be represented in the form of integral as follows 
-
-\begin{equation}
-f(t) = \frac{1}{\sqrt{2\pi}}\int\limits_{-\infty}^\infty f_{\omega} e^{\imath\omega t} d\omega, 
-\end{equation}  
-
-where a complex-valued function $f_\omega$ can be computed from the initial function as follows 
-
-\begin{equation}
-f_{\omega} =\frac{1}{\sqrt{2\pi}} \int\limits_{-\infty}^\infty f(t) e^{-\imath\omega t} dt
-\end{equation}
-
 \section{Filters}
 
 \subsection{Introduction}
 
-The term filter comes from the are electrical engineering. It usually meant a device that transformed signal in order to highlight its specific properties especially in the frequency domain(see below). 
+The term filter comes from the are electrical engineering. It usually defines a device that passes only specific components of the input signals and blocks all the others, thus, highlighting the interesting ones. A good example of this are the filters on the commercial amplifiers that allow to control the strength of high, mid and low frequencies of the output signals.
+
+As one can guess from such a broad definition of the term "filter" there is potentially infinite number of various filters that cannot even be properly classified. 
+
+A common type of filters that is frequently used in DSP are the so-called local filters. A local filter is a functional $\cal{F}$ that replaces the value of the input signal $s(t)$ with another value $\tilde{s}(t)$ which is calculated from a certain neighborhood of the point $t$. 
+\begin{equation}
+\tilde{s}(t) = {\cal F}_{ab}\left(f(\tau)\right), \quad t-a \leq \tau\leq t=b.
+\end{equation}
+
+In image processing the signals are 2 dimensional and usually the filter 
 
 The transformation, generally speaking,  can be both linear and non-linear, however, in this work we are interested only in linear filters and will refer to them when using the term ``filter''.
+
+
+
+
 
 Mathematically a filter is modeled as follows. Suppose we have a signal $f(t)$ $-\infty \leq t \leq \infty$. The transformed signal $\tilde{f}$ then reads:
 
@@ -596,6 +588,14 @@ Mathematically a filter is modeled as follows. Suppose we have a signal $f(t)$ $
 In other words, the value of the signal in each point $t$ is replaced with integral \eqref{filter_continous}. 
 
 The function $k(t,\tau)$ is called {\it kernel} in accordance to the term coming from calculus; kernel of the integral operator \eqref{filter_continous}.
+
+In the discrete case the integral is replaced with sum, so we get:
+
+\begin{equation}
+\tilde{f}_k = \sum\limits_{n'=-\infty}^\infty k_{nn'} f_n
+\end{equation}
+
+In order to visualize this transformation, observe that it replaces the value $f_k$ with the weighted sum of all the  values. If we assume (as often the case) that $k_{nn'} = k(\left|n-n'\right|)$ and it is a decreasing function of it argument, the values far from $n$ have negligible impact on $\tilde{f}_n$ while the close values are represented 
 
 Choosing different kernels, i.e. physical circuits, we can achieve various results, like only allowing low/high frequencies to pass or even filtering a specific band(see below). 
 
@@ -666,9 +666,6 @@ or, for the discrete case
 \end{equation}
 
 This resembles a sliding window with width $2l$ that slides over the initial function and replaces the value in its center with the value  of \eqref{sliding_integral} or \eqref{silding_sum}.
-
-
-
 
 
 %\chapter{3D mathematics}

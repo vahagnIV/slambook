@@ -448,8 +448,6 @@ In the following sections, we will explore these interpolation methods in more d
 
 % Add more chapters and parts as needed	
 
-
-
 \section{Fourier transform}
 
 It is impossible to underestimate the importance of Fourier transform in signal processing. Here we assume that the reader is familiar with the theory from a basic course of calculus and hence, to keep the context we are going just to copy the definitions here and highlight properties that are important for our purposes.
@@ -548,15 +546,30 @@ f_k = \sum\limits_{n=0}^{N-1} f_{m} e^{\imath \frac{2 \pi k n}{N}} = \sum\limits
 Factoring out $a$ from the second term we get
 
 \begin{equation}
-f_k =  \sum\limits_{m=0}^{N/2 -1} f_{2m} e^{\imath \frac{2 \pi k 2 m}{N}} + e^{\imath \frac{2 \pi k}{N}}\sum\limits_{m = 0}^{N / 2 - 1} f_{2m+1} e^{\imath \frac{2 \pi k 2 m }{N}}
+f_k =  \sum\limits_{m=0}^{N/2 -1} f_{2m} e^{\imath \frac{2 \pi k m}{N / 2}} + e^{\imath \frac{2 \pi k}{N}}\sum\limits_{m = 0}^{N / 2 - 1} f_{2m+1} e^{\imath \frac{2 \pi k m }{N / 2}}\label{split_fft_oe}
 \end{equation}
 
+or
+
+\begin{equation}
+ f_k = E_{k} + e^{\imath \frac{2 \pi k}{N}} O_k, \label{k_sm_N2}
+\end{equation}
+where,
+\begin{equation}
+ E_k=\sum\limits_{m=0}^{N/2 -1} f_{2m} e^{\imath \frac{2 \pi k m}{N / 2}},\quad O_k \sum\limits_{m = 0}^{N / 2 - 1} f_{2m+1} e^{\imath \frac{2 \pi k m }{N / 2}}
+\end{equation}
+
+For $k<N/2$, $E_k$ and $O_k$ represent the Fourier tranform of the subarrays consisting of only even and odd elements respectively.
+It is an exercise to prove that
+
+\begin{equation}
+ f_{N/2+k} =  E_{k} - e^{\imath \frac{2 \pi k}{N}} O_k \label{k_gt_N2}
+\end{equation}
+and, therefore, it is enough to compute the Fourier tranform of 2 the subarrays with half the size of the original one and then perform $N$
+operations \eqref{k_sm_N2} and \eqref{k_gt_N2}. Since we have $log_2(N)$ levels until we reach the end of recursion the complexity of this algorithm is $N\operatorname{log}_2(N)$.
 
 
-
-
-
-
+Clearly, in order to be able to reach the end of recursion the initial length of the array should be a power of 2. This is a limitation of the Cooley-Tukey algorithm. However, in practice the choice of the signal length often lies on us, so we can chose it to satisfy this condition. Alternatively, we can pad the array. Other, more correct methods have been developed to overcome this issue. Because of the importance of FFT in digital signal processing, a lot of research has been done on its efficient calculation which is beyond the scope of this work.
 
 \section{Filters}
 
@@ -564,14 +577,14 @@ f_k =  \sum\limits_{m=0}^{N/2 -1} f_{2m} e^{\imath \frac{2 \pi k 2 m}{N}} + e^{\
 
 The term filter comes from the are electrical engineering. It usually defines a device that passes only specific components of the input signals and blocks all the others, thus, highlighting the interesting ones. A good example of this are the filters on the commercial amplifiers that allow to control the strength of high, mid and low frequencies of the output signals.
 
-As one can guess from such a broad definition of the term "filter" there is potentially infinite number of various filters that cannot even be properly classified. 
+As one can guess from such a broad definition of the term "filter" there is potentially infinite number of various filters that cannot even be properly classified.
 
-A common type of filters that is frequently used in DSP are the so-called local filters. A local filter is a functional $\cal{F}$ that replaces the value of the input signal $s(t)$ with another value $\tilde{s}(t)$ which is calculated from a certain neighborhood of the point $t$. 
+A common type of filters that is frequently used in DSP are the so-called local filters. A local filter is a functional $\cal{F}$ that replaces the value of the input signal $s(t)$ with another value $\tilde{s}(t)$ which is calculated from a certain neighborhood of the point $t$.
 \begin{equation}
 \tilde{s}(t) = {\cal F}_{ab}\left(f(\tau)\right), \quad t-a \leq \tau\leq t=b.
 \end{equation}
 
-In image processing the signals are 2 dimensional and usually the filter 
+In image processing the signals are 2 dimensional and usually the filter
 
 The transformation, generally speaking,  can be both linear and non-linear, however, in this work we are interested only in linear filters and will refer to them when using the term ``filter''.
 
@@ -595,9 +608,9 @@ In the discrete case the integral is replaced with sum, so we get:
 \tilde{f}_k = \sum\limits_{n'=-\infty}^\infty k_{nn'} f_n
 \end{equation}
 
-In order to visualize this transformation, observe that it replaces the value $f_k$ with the weighted sum of all the  values. If we assume (as often the case) that $k_{nn'} = k(\left|n-n'\right|)$ and it is a decreasing function of it argument, the values far from $n$ have negligible impact on $\tilde{f}_n$ while the close values are represented 
+In order to visualize this transformation, observe that it replaces the value $f_k$ with the weighted sum of all the  values. If we assume (as often the case) that $k_{nn'} = k(\left|n-n'\right|)$ and it is a decreasing function of it argument, the values far from $n$ have negligible impact on $\tilde{f}_n$ while the close values are represented
 
-Choosing different kernels, i.e. physical circuits, we can achieve various results, like only allowing low/high frequencies to pass or even filtering a specific band(see below). 
+Choosing different kernels, i.e. physical circuits, we can achieve various results, like only allowing low/high frequencies to pass or even filtering a specific band(see below).
 
 This is related to a specific property of Fourier transform and integral operators.
 

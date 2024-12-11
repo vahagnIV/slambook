@@ -536,14 +536,14 @@ This is a very important result which is widely used in signal analysis.
 
 \subsubsection{Fast Fourier transform}
 
-The formulae \eqref{fourier_discrete} and \eqref{fourier_discrete_coefficients} give us the direct way to calculate direct and inverse Fourier transformation. It is easy to see that a straightforward implementation, however, will have $O(N^2)$ complexity ( $N$ coefficients $N$ terms in sum each). For practical applications this is very slow. Good news, however, is that it is possible to do better. There are many algorithms that can calculate the Fourier transform in $O(N\operatorname{log}{N}$. The most famous of them is the so-called Cooley-Tukey algorithm. It is based on the following observation. Assuming that the number of elements is even, we can rearrange the sum \eqref{fourier_discrete} into odd and even parts:
+The formulae \eqref{fourier_discrete} and \eqref{fourier_discrete_coefficients} give us the direct way to calculate direct and inverse Fourier transformation. It is easy to see that a straightforward implementation, however, will have $O(N^2)$ complexity ( $N$ coefficients $N$ terms in sum each). For practical applications this is very slow. Good news, however, is that it is possible to do better. There are many algorithms that can calculate the Fourier transform in $O(N\operatorname{log}{N}$. The most famous of them is the so-called Cooley-Tukey algorithm. It is based on the following observation:
 
 
 \begin{equation}
 f_k = \sum\limits_{n=0}^{N-1} f_{m} e^{\imath \frac{2 \pi k n}{N}} = \sum\limits_{m=0}^{N/2 -1} f_{2m} e^{\imath \frac{2 \pi k 2 m}{N}} + \sum\limits_{m = 0}^{N / 2-1} f_{2m+1} e^{\imath \frac{2 \pi k (2 m + 1)}{N}}
 \end{equation}
 
-Factoring out $e^{\imath 2 \pi k /N}$ from the second term we get
+Factoring out $a$ from the second term we get
 
 \begin{equation}
 f_k =  \sum\limits_{m=0}^{N/2 -1} f_{2m} e^{\imath \frac{2 \pi k m}{N / 2}} + e^{\imath \frac{2 \pi k}{N}}\sum\limits_{m = 0}^{N / 2 - 1} f_{2m+1} e^{\imath \frac{2 \pi k m }{N / 2}}\label{split_fft_oe}
@@ -559,30 +559,40 @@ where,
  E_k=\sum\limits_{m=0}^{N/2 -1} f_{2m} e^{\imath \frac{2 \pi k m}{N / 2}},\quad O_k \sum\limits_{m = 0}^{N / 2 - 1} f_{2m+1} e^{\imath \frac{2 \pi k m }{N / 2}}
 \end{equation}
 
-For $k<N/2$, $E_k$ and $O_k$ represent the Fourier tranform of the subarrays consisting of only even and odd elements respectively. 
+For $k<N/2$, $E_k$ and $O_k$ represent the Fourier tranform of the subarrays consisting of only even and odd elements respectively.
 It is an exercise to prove that
 
 \begin{equation}
  f_{N/2+k} =  E_{k} - e^{\imath \frac{2 \pi k}{N}} O_k \label{k_gt_N2}
 \end{equation}
 and, therefore, it is enough to compute the Fourier tranform of 2 the subarrays with half the size of the original one and then perform $N$
-operations \eqref{k_sm_N2} and \eqref{k_gt_N2}. Since we have $log_2(N)$ levels until we reach the end of recursion the complexity of this algorithm is $N\operatorname{log}_2(N)$. 
+operations \eqref{k_sm_N2} and \eqref{k_gt_N2}. Since we have $log_2(N)$ levels until we reach the end of recursion the complexity of this algorithm is $N\operatorname{log}_2(N)$.
 
 
-Clearly, in order to be able to reach the end of recursion the initial length of the array should be a power of 2. This is a limitation of the Cooley-Tukey algorithm. However, in practice the choice of the signal length often lies on us, so we can chose it to satisfy this condition. Alternatively, we can pad the array. Other, more correct methods have been developed to overcome this issue. Because of the importance of FFT in digital signal processing, a lot of research has been done on its efficient calculation which is beyond the scope of this work. 
+Clearly, in order to be able to reach the end of recursion the initial length of the array should be a power of 2. This is a limitation of the Cooley-Tukey algorithm. However, in practice the choice of the signal length often lies on us, so we can chose it to satisfy this condition. Alternatively, we can pad the array. Other, more correct methods have been developed to overcome this issue. Because of the importance of FFT in digital signal processing, a lot of research has been done on its efficient calculation which is beyond the scope of this work.
 
 \section{Filters}
 
 \subsection{Introduction}
 
-The term filter comes from the are electrical engineering. It usually meant a device that transformed signal in order to highlight its specific properties, e.g. remove unwanted components.
+The term filter comes from the are electrical engineering. It usually defines a device that passes only specific components of the input signals and blocks all the others, thus, highlighting the interesting ones. A good example of this are the filters on the commercial amplifiers that allow to control the strength of high, mid and low frequencies of the output signals.
 
-In Image Processing filters often applied as sliding windows on the images (see below). 
+As one can guess from such a broad definition of the term "filter" there is potentially infinite number of various filters that cannot even be properly classified.
+
+A common type of filters that is frequently used in DSP are the so-called local filters. A local filter is a functional $\cal{F}$ that replaces the value of the input signal $s(t)$ with another value $\tilde{s}(t)$ which is calculated from a certain neighborhood of the point $t$.
+\begin{equation}
+\tilde{s}(t) = {\cal F}_{ab}\left(f(\tau)\right), \quad t-a \leq \tau\leq t=b.
+\end{equation}
+
+In image processing the signals are 2 dimensional and usually the filter
+
+The transformation, generally speaking,  can be both linear and non-linear, however, in this work we are interested only in linear filters and will refer to them when using the term ``filter''.
 
 
-The transformation, generally speaking,  can be both linear and non-linear, however, in this section we are interested only in linear filters of a specific form and will refer to them when using the term ``filter''.
 
-Mathematically  filters are modeled as follows. Suppose we have a signal $f(t)$ $-\infty \leq t \leq \infty$. The transformed signal $\tilde{f}$ then reads:
+
+
+Mathematically a filter is modeled as follows. Suppose we have a signal $f(t)$ $-\infty \leq t \leq \infty$. The transformed signal $\tilde{f}$ then reads:
 
 \begin{equation}
  \tilde{f}(t) = \int\limits_{-\infty}^\infty k(t,\tau) f(\tau) d\tau\label{filter_continous}
@@ -592,7 +602,15 @@ In other words, the value of the signal in each point $t$ is replaced with integ
 
 The function $k(t,\tau)$ is called {\it kernel} in accordance to the term coming from calculus; kernel of the integral operator \eqref{filter_continous}.
 
-Choosing different kernels, i.e. physical circuits, we can achieve various results, like only allowing low/high frequencies to pass or even filtering a specific band(see below). 
+In the discrete case the integral is replaced with sum, so we get:
+
+\begin{equation}
+\tilde{f}_k = \sum\limits_{n'=-\infty}^\infty k_{nn'} f_n
+\end{equation}
+
+In order to visualize this transformation, observe that it replaces the value $f_k$ with the weighted sum of all the  values. If we assume (as often the case) that $k_{nn'} = k(\left|n-n'\right|)$ and it is a decreasing function of it argument, the values far from $n$ have negligible impact on $\tilde{f}_n$ while the close values are represented
+
+Choosing different kernels, i.e. physical circuits, we can achieve various results, like only allowing low/high frequencies to pass or even filtering a specific band(see below).
 
 This is related to a specific property of Fourier transform and integral operators.
 
@@ -661,36 +679,6 @@ or, for the discrete case
 \end{equation}
 
 This resembles a sliding window with width $2l$ that slides over the initial function and replaces the value in its center with the value  of \eqref{sliding_integral} or \eqref{silding_sum}.
-
-
-
-\chapter{Features}
-
-\section{Introduction}
-
-A cornerstone of 3D reconstruction is the ability to detect same points on 2 different images which are separated by space and time but have significant overlaps. We will delve into the mathematics of 3D reconstruction later, however, for now let us mention that it is intuitively obvious that 3D perception of the world by humans is strongly related to our binocular vision, i.e. having idea about the relative position of our eyes, and identifying points on the images seen by each of them, it is a matter of geometry to recover their position in the 3D space.  
-
-In general, it is hard to impossible to match every single point on 2 images - to begin with, because of the 3D nature of our world, some parts of an object that are visible by the left eye can be hidden by another object for the right eye({\it occlusion}). In practice, however, the patterns can be too repetitive and it is sometimes very hard to identify the depth yet alone for humans and even harder to come up with a reliable algorithm.
-
-
-Although many methods have been developed for the so-called ``dense matching'', i.e. matching all non-occluded areas in 2 images, it is much more easier and reliable to match sparse points - certain points detected by an algorithm on both images. Such points are usually referred to as {\it key-points}. Normally, the key-point extraction algorithms also enhance them with descriptors (usually vectors of certain length) which are then used for matching. The key-point together with its corresponding descriptor are called {\it features}. 
-
-There are many algorithms developed for feature extraction. The are few aspects of an algorithm that is worth considering before choosing one of them to proceed.
-
-\begin{itemize}
- \item Repeatability - The ability to extract the same points on slightly different images. 
- \item Descriptor precision - As the descriptors act as some digital fingerprints for the keypoint, it is very important 
- \item Computational efficiency-
-\end{itemize}
-
-
-In this chapter we are going to look closer into some of them.  
-
-
-\section{BRIEF (Binary Robust Independent Elementary Features)}
-
-BRIEF is the fastest of the considered algorithms. 
-
 
 
 %\chapter{3D mathematics}

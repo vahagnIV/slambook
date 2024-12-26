@@ -1,7 +1,7 @@
 \documentclass[11pt]{book}
 
 % Preamble
-\usepackage{graphicx} % For including images
+\usepackage{graphicx, grffile} % For including images
 \usepackage{amsmath,amsfonts} % For mathematical formulas
 \usepackage{hyperref} % For hyperlinks
 \usepackage{geometry} % For page layout and margins
@@ -573,115 +573,126 @@ Clearly, in order to be able to reach the end of recursion the initial length of
 
 \section{Filters}
 
-\subsection{Introduction}
+\section{Filters in Signal Processing and Computer Vision}
 
-The term filter comes from the are electrical engineering. It usually defines a device that passes only specific components of the input signals and blocks all the others, thus, highlighting the interesting ones. A good example of this are the filters on the commercial amplifiers that allow to control the strength of high, mid and low frequencies of the output signals.
+\subsection{Definition of a Filter in Signal Processing}
+In the context of signal processing, a \emph{filter} is a mathematical operation or system designed to selectively enhance or suppress certain components of a signal. Typically, filters are used to modify signals based on specific criteria, such as frequency, amplitude, or phase. A filter processes an input signal to produce a desired output signal, often removing unwanted noise or emphasizing useful features.
 
-As one can guess from such a broad definition of the term "filter" there is potentially infinite number of various filters that cannot even be properly classified.
+The term \emph{filter} originates from its analogy to physical filters used in everyday life, such as coffee filters or air filters. Just as these physical filters allow desired substances to pass through while blocking unwanted materials, signal processing filters allow desired components of a signal to pass through while attenuating or removing undesired components.
 
-A common type of filters that is frequently used in DSP are the so-called local filters. A local filter is a functional $\cal{F}$ that replaces the value of the input signal $s(t)$ with another value $\tilde{s}(t)$ which is calculated from a certain neighborhood of the point $t$.
+Filters are ubiquitous in various domains of signal processing. Below are a few examples unrelated to computer vision:
+\begin{itemize}
+    \item \textbf{Audio Signal Processing:} Low-pass filters are used in audio systems to remove high-frequency noise, while high-pass filters can eliminate low-frequency hums.
+    \item \textbf{Telecommunications:} Band-pass filters are employed to isolate a specific range of frequencies in a communication channel, enabling selective reception of signals.
+    \item \textbf{Electrical Circuits:} Analog filters in electronic circuits are used to smooth voltage waveforms, such as removing ripple from a power supply.
+    \item \textbf{Biomedical Signal Processing:} Filters are applied to ECG (electrocardiogram) data to remove noise caused by muscle movement or electrical interference.
+\end{itemize}
+
+Often filters are implemented as the so-called integral operaors. Integral operators, which underpin many filters in signal processing, arise both mathematically and from physical systems. Mathematically, integral operators are derived from the theory of convolution, a fundamental operation used to combine functions. In physical systems, integral operations naturally occur in circuits such as RC (resistor-capacitor) circuits, which integrate or differentiate input signals depending on their configuration. These circuits form the basis for early analog filters, where voltage and current behavior emulate mathematical integration.
+
+An integraloperator applies a mathematical function, represented by a kernel, to modify or transform a signal. In continuous signal processing, this operation often takes the form of an \emph{integral transform}, where the output signal is derived by integrating the product of the input signal and the kernel function over a specified range. Mathematically, for a signal $f(t)$ and a kernel $k(t, \tau)$, the output $g(t)$ is given by:
 \begin{equation}
-\tilde{s}(t) = {\cal F}_{ab}\left(f(\tau)\right), \quad t-a \leq \tau\leq t=b.
+g(t) = \int_{-\infty}^{\infty} k(t, \tau) f(\tau) \, d\tau. \label{kernel_1d} 
 \end{equation}
 
-In image processing the signals are 2 dimensional and usually the filter
 
-The transformation, generally speaking,  can be both linear and non-linear, however, in this work we are interested only in linear filters and will refer to them when using the term ``filter''.
+Kernel operators are essential because they provide a structured way to manipulate signals for tasks like smoothing, sharpening, and frequency filtering. By carefully designing the kernel, specific signal characteristics can be amplified or attenuated, enabling efficient analysis and processing.
 
+The generalization of \eqref{kernel_1d} for 2-dimensional case is straightforward:
+\[
+g(x,y) = \int\limits_{x'=-\infty}^\infty  \int\limits_{y'=-\infty}^\infty  k(x',y') f(x,y) dx' dy'
+\]
 
-
-
-
-Mathematically a filter is modeled as follows. Suppose we have a signal $f(t)$ $-\infty \leq t \leq \infty$. The transformed signal $\tilde{f}$ then reads:
-
-\begin{equation}
- \tilde{f}(t) = \int\limits_{-\infty}^\infty k(t,\tau) f(\tau) d\tau\label{filter_continous}
-\end{equation}
-
-In other words, the value of the signal in each point $t$ is replaced with integral \eqref{filter_continous}. 
-
-The function $k(t,\tau)$ is called {\it kernel} in accordance to the term coming from calculus; kernel of the integral operator \eqref{filter_continous}.
-
-In the discrete case the integral is replaced with sum, so we get:
-
-\begin{equation}
-\tilde{f}_k = \sum\limits_{n'=-\infty}^\infty k_{nn'} f_n
-\end{equation}
-
-In order to visualize this transformation, observe that it replaces the value $f_k$ with the weighted sum of all the  values. If we assume (as often the case) that $k_{nn'} = k(\left|n-n'\right|)$ and it is a decreasing function of it argument, the values far from $n$ have negligible impact on $\tilde{f}_n$ while the close values are represented
-
-Choosing different kernels, i.e. physical circuits, we can achieve various results, like only allowing low/high frequencies to pass or even filtering a specific band(see below).
-
-This is related to a specific property of Fourier transform and integral operators.
-
-\subsection{Fourier transform properties of integral operators}
-
-In the area of signal processing Fourier transform
-
- We will explore filters in images processing later in this section, but before that let us consider an example of 1-dimensional continuous signal and the Gaussian low-pass filter. 
-
-\subsection{Example: Gaussian low-pass filter}
-
-Let us have a continuous signal (e.g. sound/radio-wave) that is represented by a finite smooth function $f(t)$. The function can be represented as a sum(or integral) of harmonic waves. We will consider the infinite case, i.e.
-
-\begin{equation}
-f(t) = \frac{1}{\sqrt{2\pi}}\int\limits_{-\infty}^\infty f_{\omega} e^{\imath\omega t} d\omega,\quad \text{where} \qquad f_{\omega} =\frac{1}{\sqrt{2\pi}} \int\limits_{-\infty}^\infty f(t) e^{-\imath\omega t} dt
-\end{equation}      
-The complex valued function $f_{\omega}$ corresponds to the amplitude of each harmonic wave and is called Fourier image of the function $f(t)$.
-Now let us consider the action of kernel 
-\begin{equation}
-k(t,\tau) = e^{-\frac{(t-\tau)^2}{\sigma^2}}
-\end{equation}
- on the function $f(t)$, namely, let us investigate the Fourier image (frequency response) of the function
-\begin{equation}
-g(t) = \int\limits_{-\infty}^\infty f(\tau)e^{-\lambda(t-\tau)^2} d\tau 
-\end{equation}.
-
-Straightforward substitution lead to the following result:
-
-\begin{equation}
-g_\omega = \frac{1}{\sqrt{2\pi}} \int\limits_{-\infty}^\infty g(t) e^{-\imath\omega t} = \frac{1}{\sqrt{2\pi}} \int\limits_{-\infty}^\infty \int\limits_{-\infty}^\infty f(\tau)e^{-\frac{(t-\tau)^2}{\sigma^2}} e^{-\imath\omega t }dt d\tau 
-\end{equation}
-
-Using substitution $t' = t - \tau$, then changing the order of integrals gives
-
-\begin{equation}
-g_\omega = \int\limits_{-\infty}^\infty f(\tau) e^{-\imath\omega \tau}d\tau \int\limits_{-\infty}^\infty e^{-\frac {t^2}{\sigma^2}} e^{-\imath\omega t }dt
-\end{equation}
-
-The left integral in this equation is just the Fourier image of the initial function $f_\omega$, while the second integral gives us
-\begin{equation}
-\int\limits_{-\infty}^\infty e^{-\frac {t^2}{\sigma^2}} e^{-\imath\omega t }dt = \sqrt{\pi} \sigma e^{-\frac{\omega^2 \sigma^2}{4}}
-\end{equation}
-
-Finally, we obtain
-
-\begin{equation}
-g_\omega = \sqrt{\pi} \sigma e^{-\frac{\omega^2 \sigma^2}{4}} f_\omega
-\end{equation}
-
-This formula implies that the amplitude density is almost unchanged for small values of frequencies, while reduced significantly along the increasing them. Hence the name - low-pass filter, i.e. as soon as the signal was passed through this filter, only low frequencies survive. 
-
-Such filters are used for smoothing the signals - removing the high frequency noise.
-
-\subsection{Convolutional filters}
-
-In computational disciplines such as Image Processing we cannot perform infinite sums or take infinite integrals. However, let us observe that in the example of Gaussian filter, the value of the kernel decreases drastically along the increasing the distance from the point - $(t-\tau)$. This implies that for the given point $t$ the contribution of signal values to the value of the filtered function $\tilde{f}(t)$ decreases the farther away the points. So, with any precision $\varepsilon$ we can limit the integral (or sum) to a symmetric interval such that the contribution of everything out of that interval will be less than it and can be neglected. In other words, we replace the \eqref{filter_continous}  with finite integral:
-
-\begin{equation}
-\tilde{f}(t) = \int\limits_{\tau = t -l}^{t+l}f(\tau) k(t,\tau) d\tau\label{sliding_integral}
-\end{equation}
-
-or, for the discrete case
-
-\begin{equation}
-\tilde{f_n} = \sum\limits_{k= n-l}^{n+l} k_{nk}f_k\label{silding_sum}
-\end{equation}
-
-This resembles a sliding window with width $2l$ that slides over the initial function and replaces the value in its center with the value  of \eqref{sliding_integral} or \eqref{silding_sum}.
+An essential aspect of many integral operators is the choice of the kernel, the function used in the operation. Kernels that depend on the distance between points, such as Gaussian kernels, are particularly important because they emphasize locality. This property makes them ideal for capturing and processing spatial or temporal relationships in signals. We will focus on this property below.
 
 
-%\chapter{3D mathematics}
+In practical applications, signals are often discretized through a process called \emph{sampling}, where the continuous signal is represented by discrete data points. When signals are sampled, integral operations are approximated by summations. For a sampled signal $f[n]$ and a discrete kernel $k[m]$, the output $g[n]$ is computed as:
+\[ 
+g_n = \sum_{m=-M}^{M} k_m f_{n+m}, 
+\]
+where $M$ determines the size of the kernel.
+
+Despite the transition from integration to summation, the principles of kernel operations remain the same: the kernel weights the contributions of neighboring values to compute the output. Summing over a small window is particularly valuable in discrete settings, as it localizes computation and enables real-time or efficient processing. Small windows often suffice for many applications, as they capture local structures or features while maintaining computational efficiency.
+
+
+In computer vision, the signals are 2-dimensional. These filters operate by convolving a small, fixed-size matrix, known as a \emph{kernel} or \emph{filter}, over an image. This operation is called \emph{convolution} and involves the following steps:
+\begin{enumerate}
+    \item The kernel is positioned over a specific region of the image (typically, starting at the top-left corner).
+    \item The element-wise product of the kernel values and the corresponding image pixel intensities within the kernel’s footprint is computed.
+    \item The resulting values are summed to produce a single output value, which is assigned to the corresponding pixel in the output image.
+    \item The kernel is slid (translated) across the image, repeating the above steps for every position.
+\end{enumerate}
+
+Mathematically, for an image $I(x, y)$ and a kernel $K(u, v)$ of size $m \times n$, the output image $O(x, y)$ is given by:
+\[
+O(x, y) = \sum_{u=-\lfloor m/2 \rfloor}^{\lfloor m/2 \rfloor} \sum_{v=-\lfloor n/2 \rfloor}^{\lfloor n/2 \rfloor} K(u, v) \cdot I(x+u, y+v),
+\]
+where $\lfloor \cdot \rfloor$ denotes the floor function.
+
+
+Linear sliding window filters are used to perform various operations in image processing:
+\begin{itemize}
+    \item \textbf{Smoothing:} Averaging filters (e.g., mean filter) reduce noise by averaging pixel intensities within a neighborhood.
+    \item \textbf{Edge Detection:} Filters like the Sobel or Prewitt kernels emphasize edges by computing gradients of pixel intensities.
+    \item \textbf{Sharpening:} Laplacian filters highlight fine details and edges by emphasizing high-frequency components.
+\end{itemize}
+
+These filters are foundational in computer vision as they enable preprocessing, feature extraction, and enhancement of image data, paving the way for more complex analyses and applications.
+
+
+Before passing to examples and implementation of filters, let us stop on an important property of local filters—the \emph{multiplicative property of Fourier images}. This property states that convolution in the spatial domain corresponds to multiplication in the Fourier domain. Mathematically, for an image $I(x, y)$ and a filter kernel $K(x, y)$, their convolution $O(x, y)$ can be represented as:
+\[
+O(x, y) = I(x, y) * K(x, y),
+\]
+where $*$ denotes convolution. Taking the Fourier transform of both sides, we have:
+\[
+\mathcal{F}\{O(x, y)\} = \mathcal{F}\{I(x, y)\} \cdot \mathcal{F}\{K(x, y)\}.
+\]
+
+To prove the multiplicative property, we begin with the definition of convolution in two dimensions:
+\[
+O(x, y) = \int_{-\infty}^{\infty} \int_{-\infty}^{\infty} I(\xi, \eta) K(x-\xi, y-\eta) \, d\xi \, d\eta.
+\]
+
+Taking the Fourier transform of $O(x, y)$, we apply the Fourier transform definition:
+\[
+\mathcal{F}\{O(x, y)\}(u, v) = \int_{-\infty}^{\infty} \int_{-\infty}^{\infty} O(x, y) e^{-j2\pi(ux + vy)} \, dx \, dy.
+\]
+
+Substituting the expression for $O(x, y)$ into this equation:
+\[
+\mathcal{F}\{O(x, y)\}(u, v) = \int_{-\infty}^{\infty} \int_{-\infty}^{\infty} \left[ \int_{-\infty}^{\infty} \int_{-\infty}^{\infty} I(\xi, \eta) K(x-\xi, y-\eta) \, d\xi \, d\eta \right] e^{-j2\pi(ux + vy)} \, dx \, dy.
+\]
+
+Rearranging the order of integration:
+\[
+\mathcal{F}\{O(x, y)\}(u, v) = \int_{-\infty}^{\infty} \int_{-\infty}^{\infty} I(\xi, \eta) \left[ \int_{-\infty}^{\infty} \int_{-\infty}^{\infty} K(x-\xi, y-\eta) e^{-j2\pi(ux + vy)} \, dx \, dy \right] \, d\xi \, d\eta.
+\]
+
+Changing variables in the inner integral by letting $x-\xi = x'$ and $y-\eta = y'$ gives:
+\[
+\mathcal{F}\{O(x, y)\}(u, v) = \int_{-\infty}^{\infty} \int_{-\infty}^{\infty} I(\xi, \eta) e^{-j2\pi(u\xi + v\eta)} \mathcal{F}\{K(x, y)\}(u, v) \, d\xi \, d\eta.
+\]
+
+Recognizing the remaining integral as the Fourier transform of $I(x, y)$, we obtain:
+\[
+\mathcal{F}\{O(x, y)\}(u, v) = \mathcal{F}\{I(x, y)\}(u, v) \cdot \mathcal{F}\{K(x, y)\}(u, v).
+\]
+
+This completes the proof of the multiplicative property.
+
+Here, $\mathcal{F}$ denotes the Fourier transform, and the operation in the Fourier domain is element-wise multiplication. This equivalence simplifies computations significantly, especially for large filters and images, as multiplication is computationally more efficient than direct convolution in the spatial domain.
+
+This property is essential for several reasons:
+\begin{itemize}
+    \item \textbf{Efficiency:} Using the Fast Fourier Transform (FFT), the Fourier transform and its inverse can be computed efficiently, making this approach practical for large-scale problems.
+    \item \textbf{Filter Design:} Filters can be directly designed in the frequency domain to target specific frequency components, such as low-pass, high-pass, or band-pass filters.
+    \item \textbf{Theoretical Insight:} The Fourier domain provides a clear perspective on the frequency characteristics of images and filters, aiding in the understanding and design of processing techniques.
+\end{itemize}
+
+For example, Gaussian filters, which are often used for smoothing, have a particularly simple representation in the Fourier domain. A Gaussian filter in the spatial domain corresponds to another Gaussian in the Fourier domain, emphasizing its isotropic smoothing properties across all frequencies. This makes Gaussian filters computationally and analytically attractive in both domains.
+
+In summary, the multiplicative property of Fourier images bridges spatial and frequency domain analysis, offering both computational advantages and deeper insights into the behavior of filters.
 
 
 

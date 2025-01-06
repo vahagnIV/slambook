@@ -948,6 +948,45 @@ Each technique has its trade-offs in terms of computational complexity, memory r
 
 
 
+
+
+
+
+\chapter{Features}
+
+
+It is intuitively understood (and we will address this problem in the upcoming chapters) that 3D reconstruction involves determining corresponding physical points on images that are spatially or temporally shifted and then applying geometry, thus recovering the 3D coordinates of these physical points. While it would be ideal to recover all points in the scene and construct a dense depth map, it is more practical to start with a sparse set of points—the keypoints. Here is where the so-called {\it features} come into play.
+
+In 3D reconstruction, {\it features} play a pivotal role in bridging the gap between raw visual data and meaningful geometric understanding. These features, which are distinct and repeatable patterns in images, enable the identification of corresponding points across multiple views of a scene. This correspondence is fundamental for estimating the 3D structure of a scene using techniques such as Structure-from-Motion (SfM) and Multi-View Stereo (MVS). In this section, we discuss why features such as ORB, SIFT, and SURF are crucial in the 3D reconstruction pipeline.
+
+{\it Features} are distinctive elements in an image that are invariant or robust to various transformations such as scaling, rotation, and changes in illumination. They often include points, edges, or regions that can be reliably detected across different images of the same scene. 
+
+\begin{itemize}
+\item \textbf{Keypoints}: Points of interest in an image, often located at corners or regions with high gradient variation.
+\item \textbf{Descriptors}: Numerical representations of the local image patch around a keypoint, used to match features across images.
+\end{itemize}
+
+
+By detecting features in images and matching them across views, it is possible to recover the spatial relationships and relative camera poses, which are essential for reconstructing a scene in three dimensions.
+
+A typical 3D reconstruction involves several steps where features are indispensable:
+
+\begin{enumerate}
+ \item \textbf{Feature Detection:} Algorithms such as Scale-Invariant Feature Transform (SIFT), Speeded-Up Robust Features (SURF), and Oriented FAST and Rotated BRIEF (ORB) detect keypoints in images. These keypoints serve as the foundation for establishing correspondences across multiple views.
+ \item \textbf{Feature Matching:} After detection, descriptors generated for the keypoints are compared across images to find matches. Robust matching ensures that corresponding points are identified correctly, even in the presence of noise, occlusions, or perspective distortions.
+\item \textbf{Camera Pose Estimation:} Matched features enable the estimation of relative camera positions and orientations using techniques such as epipolar geometry. Accurate pose estimation is crucial for constructing a coherent 3D representation of the scene.
+\item \textbf{3D Point Cloud Generation:} Triangulation of matched points from multiple views produces a sparse 3D point cloud, representing the scene's structure.
+\item \textbf{Dense Reconstruction:} Features often guide dense matching algorithms, allowing for the generation of a detailed 3D model by interpolating or densifying the sparse point cloud.
+ \end{enumerate}
+
+ We will delve into the details of each step deeper later. In this chapter, however, we will focus mainly on the first 2 steps.
+ 
+ Usually the first step can be split into 2 substeps - keypoint detection and descriptor calculation. There exist various algorithms for both substeps which can normally combined with each other depending on the needs and tradeoffs you make. 
+ 
+ In this chapter we will study some of them.
+ 
+ \section{Features from accelerated segment test }
+
 \backmatter
 % References, Index, etc.
 

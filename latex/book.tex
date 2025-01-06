@@ -340,7 +340,7 @@ template<typename T>
 class Resizer {
 public:
   /*!
-   * @brief Resizes the image into the provided one.
+   * @brief Resizes the image into the provided one.11
    * @param sampler The sampler of original image.
    * @param image_to The target image to resize image to.
    */
@@ -983,10 +983,102 @@ A typical 3D reconstruction involves several steps where features are indispensa
  
  Usually the first step can be split into 2 substeps - keypoint detection and descriptor calculation. There exist various algorithms for both substeps which can normally combined with each other depending on the needs and tradeoffs you make. 
  
- In this chapter we will study some of them.
+ \subsubsection{Keypoints}
  
- \section{Features from accelerated segment test }
+As previously mentioned, keypoints are points of interest in an image that are characterized by certain properties. The most common properties include strength and orientation. Strength represents the robustness of the detected keypoint, i.e., how likely it is to be detected in similar images. Orientation, on the other hand, indicates a specific approximate direction that should remain relatively consistent even after slight distortions to the image.
+ 
+ 
+ To represent a point let us introduce a tructure as follows:
+ \begin{lstlisting}[language=C++, caption={Point2D class}]
+template<typename T>
+struct Point2D {
+  Point2D() = default;
+  Point2D(T _x, T _y) : x(_x), y(_y) {}
+  T x;
+  T y;
 
+  bool operator==(const Point2D<T> & other) const{
+    return x == other.x && y == other.y;
+  }
+};
+ \end{lstlisting}
+
+ Using this definition we can declare the struture for Key Points:
+
+ \begin{lstlisting}[language=C++, caption={KeyPoint class}]
+struct KeyPoint{
+  geometry::Point2D<double> pt;
+  double angle;
+  double strength;
+};
+\end{lstlisting}
+ 
+ 
+ Having defined the Keypoint structure, we can now define an interface for Keypoint detector:
+ 
+ \begin{lstlisting}[language=C++, caption={IKeypointDetector interface}]
+template<typename T>
+class IKeypointDetector {
+ public:
+  virtual ~IKeypointDetector() = default;
+  virtual std::vector<KeyPoint> 
+        ExtractKeyPoints(const Image<T> & image) = 0;
+};
+\end{lstlisting}
+  
+ 
+ We will implement this interface for several algorithms in the sections below.
+
+\subsubsection{Descriptors}
+
+Extracting keypoints alone is not very useful by itself unless we can match them between two spatially separated images. Descriptors are numerical properties of keypoints, typically represented as vectors of some length $D$. Together with a distance function $L(d_1, d_2) \geq 0$, the descriptors enable us to match keypoints from 2 images. 
+
+We will discuss the matching process in more detail later. For now, to provide some intuition, consider two sets of features, $(k^{(1)}_i, d^{(1)}_i)$ and $(k^{(2)}_i, d^{(2)}_i)$ extracted from 2 images. During matching, we assume that the corresponding keypoint for $(k^{(1)}_i, d^{(1)}_i)$  in the second image is $(k^{(2)}_k, d^{(2)}_k)$, which is the closest in terms of the distance function $L$.
+
+We will not introduce a new structure for storing descriptors; instead, we will reuse our existing Image class.
+
+ \section{FAST - Features from accelerated segment test }
+ 
+ Although FAST is not the first keypoint detection algorithm historically, we will begin with it due to its simplicity. Its computational efficiency makes it an excellent choice for applications that require high performance, such as mobile apps where resources are limited.
+ 
+ Consider a circle with radius 3 around a pixel as in Fig \ref{fig:fast}. The circle contains 16 pixels with brightness values denoted by $I_i$, where $i = 0,\ldots, 15$. 
+
+ \begin{figure}[h]
+\centering
+\includegraphics[width=0.6\textwidth]{images/fast.png}
+\caption{Illustration of FAST.}
+\label{fig:fast}
+\end{figure}
+ 
+ 
+A pixel $𝑃$ is selected as a \textit{keypoint} if there are 
+$𝑁=12$ \textbf{sequential} pixels on the circle such that all these pixels are either brighter or darker than the central pixel.
+ 
+ \begin{equation}
+  I_k \geq P + t,\quad  \forall k = k_0,\ldots, k_n, \qquad n\geq 12
+ \end{equation}
+ or
+ \begin{equation}
+  I_k \leq P + t,\quad  \forall k = k_0,\ldots, k_n, \quad n\geq 12
+ \end{equation}
+ 
+ 
+ Here the parameter $t$ is a threshold that determines the sensitivity of the keypoint detection. The choice of $t$ depends on the specific application, the trade-offs between sensitivity and specificity, and the characteristics of the image dataset. For sharper images, a low threshold (even $t=0$) may suffice, while for applications requiring the identification of only the most prominent keypoints, a higher threshold value can be chosen. 
+ 
+ 
+ The strength of the keypoint is defined as the sum of absolute differences between the  brightness of pixels on the chain and the central pixel's.
+ 
+ \begin{equation}
+  s = \sum\limits_{k=k_0}^{n} \operatorname{abs}\left(I_k - P\right)
+ \end{equation}
+ 
+ 
+ 
+ \subsection{Non maximum suppression}
+ 
+ 
+
+ 
 \backmatter
 % References, Index, etc.
 
